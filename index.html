@@ -21,8 +21,8 @@
             event.preventDefault();
             const keyword = document.getElementById('keyword').value;
             const location = document.getElementById('location').value;
-            
-            fetch('YOUR_COLAB_WEBHOOK_URL', {
+
+            fetch('http://<colab-url>/webhook', {  // Replace <colab-url> with the actual URL you get from Colab
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
