@@ -2,54 +2,71 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Job Data Visualization</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <h1>Job Data Visualization</h1>
-    <form id="job-form">
-        <label for="location">Location:</label>
-        <select id="location" name="location">
-            <option value="Alabama">Alabama</option>
-            <option value="Alaska">Alaska</option>
-            <option value="Arizona">Arizona</option>
-            <!-- Add all other states here -->
-        </select>
-        <button type="submit">Fetch Data</button>
-    </form>
-    <canvas id="jobChart" width="400" height="200"></canvas>
+    <label for="location">Location:</label>
+    <select id="location">
+        <option value="Alabama">Alabama</option>
+        <option value="Arizona">Arizona</option>
+        <!-- Add more options as needed -->
+    </select>
+    <button id="fetchDataButton">Fetch Data</button>
+    <canvas id="jobChart"></canvas>
 
     <script>
-        document.getElementById('job-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const location = document.getElementById('location').value;
-            const response = await fetch(`https://us-central1-vocal-park-418014.cloudfunctions.net/fetch_usajobs_data?location=${location}`);
-            const data = await response.json();
-            
-            const ctx = document.getElementById('jobChart').getContext('2d');
-            const chartData = {
-                labels: data.map(item => item.PositionTitle),
-                datasets: [{
-                    label: 'Number of Jobs',
-                    data: data.map(item => item.JobCount),
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            };
+        let jobChart;
 
-            new Chart(ctx, {
-                type: 'bar',
-                data: chartData,
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
+        document.getElementById('fetchDataButton').addEventListener('click', () => {
+            const location = document.getElementById('location').value;
+            fetch(`https://us-central1-vocal-park-418014.cloudfunctions.net/fetch_usajobs_data?location=${location}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
                     }
-                }
-            });
+                    return response.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data)) {
+                        throw new Error('Expected data to be an array');
+                    }
+
+                    const titles = data.map(item => item.PositionTitle);
+                    const counts = titles.reduce((acc, title) => {
+                        acc[title] = (acc[title] || 0) + 1;
+                        return acc;
+                    }, {});
+                    const chartData = {
+                        labels: Object.keys(counts),
+                        datasets: [{
+                            label: 'Number of Jobs',
+                            data: Object.values(counts),
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    };
+
+                    if (jobChart) {
+                        jobChart.destroy();
+                    }
+
+                    const ctx = document.getElementById('jobChart').getContext('2d');
+                    jobChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: chartData,
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
         });
     </script>
 </body>

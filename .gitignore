@@ -1,3 +1,5 @@
 .gcloudignore
 *.py
 requirements.txt
+manin_.py
+manin.py
